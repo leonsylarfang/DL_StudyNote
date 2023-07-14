@@ -169,3 +169,104 @@ $$
 在这个过程中，随着 $t$ 的不断增大，时间步长会变的越来越大，而图片会逐渐变成纯噪声。
 
 ### 反向扩散
+反向过程则是通过采样 $q(\mathbf{x}_{t-1}|\mathbf{x}_t)$ ，从而能从高斯噪声输入 $\mathbf{x}_T\sim \mathcal{N}(0,\mathbf{I})$ 中重建出正确的数据样本。当 $\beta_t$ 足够小时，$q(\mathbf{x}_{t-1}|\mathbf{x}_t)$ 也服从高斯分布。与VAE类似，因为预测 $q(\mathbf{x}_{t-1}|\mathbf{x}_t)$ 需要整个数据集，很难显式求解，所以我们选择使用以 $\theta$ 作为参数的模型 $p_\theta (\mathbf{x}_{t-1}|\mathbf{x}_t)$ 来拟合它，从而得到每一个时刻的分布 $p_\theta (\mathbf{x}_{0:T})$ ：
+$$
+p_\theta(\mathbf{x}_{0:T}) = p(\mathbf{x}_T) \prod^T_{t=1} p_\theta(\mathbf{x}_{t-1} \vert \mathbf{x}_t) \quad
+$$
+$$
+p_\theta(\mathbf{x}_{t-1} \vert \mathbf{x}_t) = \mathcal{N}(\mathbf{x}_{t-1}; \boldsymbol{\mu}_\theta(\mathbf{x}_t, t), \boldsymbol{\Sigma}_\theta(\mathbf{x}_t, t))
+$$
+
+给定 $x_0$ ，通过贝叶斯公式可得：
+$$
+\begin{aligned}
+q(\mathbf{x}_{t-1} \vert \mathbf{x}_t, \mathbf{x}_0) 
+&= q(\mathbf{x}_t \vert \mathbf{x}_{t-1}, \mathbf{x}_0) \frac{ q(\mathbf{x}_{t-1} \vert \mathbf{x}_0) }{ q(\mathbf{x}_t \vert \mathbf{x}_0) } \\
+&\propto \exp\Big( -\frac{1}{2} \big( \underbrace{{(\frac{\alpha_t}{\beta_t} + \frac{1}{1 - \bar{\alpha}_{t-1}})} \mathbf{x}_{t-1}^2 } _{{\mathbf{x}_{t-1} 的方差}}- \underbrace{{(\frac{2\sqrt{\alpha_t}}{\beta_t} \mathbf{x}_t + \frac{2\sqrt{\bar{\alpha}_{t-1}}}{1 - \bar{\alpha}_{t-1}} \mathbf{x}_0)} \mathbf{x}_{t-1}}_{\mathbf{x}_{t-1} 的均值} + \underbrace{C(\mathbf{x}_t, \mathbf{x}_0)}_{与\mathbf{x}_{t-1}无关} \big) \Big)
+\end{aligned}
+$$
+
+那么 $q(\mathbf{x}_{t-1} \vert \mathbf{x}_t, \mathbf{x}_0)$ 服从正态分布 $q(\mathbf{x}_{t-1} \vert \mathbf{x}_t, \mathbf{x}_0) = \mathcal{N}(\mathbf{x}_{t-1}; \tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t), \tilde{\beta}_t \mathbf{I})$ 。其中：
+$$
+\begin{aligned}
+\tilde{\beta}_t 
+&= \frac{1 - \bar{\alpha}_{t-1}}{1 - \bar{\alpha}_t} \cdot \beta_t \\
+\tilde{\boldsymbol{\mu}}_t (\mathbf{x}_t)
+&=\frac{1}{\sqrt{\alpha_t}} \Big( \mathbf{x}_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \boldsymbol{\epsilon}_t \Big)
+\end{aligned}
+$$
+
+其中 $\tilde{\boldsymbol{\mu}}_t (\mathbf{x}_t)$ 即为模型最终需要训练的 `ground truth`， $\boldsymbol{\epsilon}_t$ 为深度模型所预测的高斯噪声，若写作 $\boldsymbol{\epsilon}_\theta (\mathbf{x}_{t},t)$ 则改写上式得到：
+$$
+\boldsymbol{\mu}_\theta (\mathbf{x}_t,t)=\frac{1}{\sqrt{\alpha_t}} \Big( \mathbf{x}_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta (\mathbf{x}_t,t) \Big)
+$$
+
+由此可以得到模型预测值 $\mathbf{x}_{t-1}$ :
+$$
+\mathbf{x}_{t-1}=\frac{1}{\sqrt{\alpha_t}} \Big( \mathbf{x}_t - \frac{1 - \alpha_t}{\sqrt{1 - \bar{\alpha}_t}} \boldsymbol{\epsilon}_\theta (\mathbf{x}_t,t)\Big)+\sigma_\theta(\mathbf{x}_t,t)z \qquad z\sim \mathcal{N}(0,\mathbf{I})
+$$
+
+### 训练过程
+以类似于VAE的变分下界来优化负对数似然值可得：
+$$
+\begin{aligned}
+L&=\mathbb{E}_{q(\mathbf{x}_0)}[-log\; p_\theta (\mathbf{x_0})]  \\ 
+&\leqslant \mathbb{E}_{q(\mathbf{x}_{0:T})}[-log\frac{p_\theta (\mathbf{x}_{0:T})}{q(\mathbf{x}_{1:T}|\mathbf{x}_{0})}] \qquad \qquad Jensen不等式\\
+&=-L_{VLB}
+\end{aligned}
+$$
+对 $L_{VLB}$ 进行进一步的推导可得多个KL散度和熵的累加：
+$$
+L_\text{VLB} 
+= \mathbb{E}_q [\underbrace{D_\text{KL}(q(\mathbf{x}_T \vert \mathbf{x}_0) \parallel p_\theta(\mathbf{x}_T))}_{L_T} + \sum_{t=2}^T \underbrace{D_\text{KL}(q(\mathbf{x}_{t-1} \vert \mathbf{x}_t, \mathbf{x}_0) \parallel p_\theta(\mathbf{x}_{t-1} \vert\mathbf{x}_t))}_{L_{t-1}} \underbrace{- \log p_\theta(\mathbf{x}_0 \vert \mathbf{x}_1)}_{L_0} ]
+$$
+其中对 $L_t$ 进行多远高斯分布的KL散度求解可得：
+
+$$
+L_t =\mathbb{E}_{\mathbf{x}_0, \boldsymbol{\epsilon}} \Big[\frac{ (1 - \alpha_t)^2 }{2 \alpha_t (1 - \bar{\alpha}_t) \| \boldsymbol{\Sigma}_\theta \|^2_2} \|\boldsymbol{\epsilon}_t - \boldsymbol{\epsilon}_\theta(\sqrt{\bar{\alpha}_t}\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\boldsymbol{\epsilon}_t, t)\|^2 \Big] 
+$$
+
+通过最小化 $\boldsymbol{\mu}_\theta(\mathbf{x}_t, t)$ 和 `ground truth` $\tilde{\boldsymbol{\mu}}_t(\mathbf{x}_t, \mathbf{x}_0)$ 的MSE可进一步简化得到：
+$$
+L_t^\text{simple}= \mathbb{E}_{t \sim [1, T], \mathbf{x}_0, \boldsymbol{\epsilon}_t} \Big[\|\boldsymbol{\epsilon}_t - \boldsymbol{\epsilon}_\theta(\sqrt{\bar{\alpha}_t}\mathbf{x}_0 + \sqrt{1 - \bar{\alpha}_t}\boldsymbol{\epsilon}_t, t)\|^2 \Big]
+$$
+最终得到的优化目标损失函数为：
+$$
+L_{simple}=L_t^\text{simple}+C
+$$
+其中 $C$ 是与 $\theta$ 无关的常数。
+
+该训练过程可被总结为：
+1. 获取输入 $\mathbf{x}_0$ ，并从 $[1,T]$ 中随机采样一个 $t$ 。
+2. 从标准正态分布随机采样一个噪声 $\bar{z}_t\sim \mathcal{N}(0,\mathbf{I})$ 。
+3. 最小化 $L_{simple}$ 。
+
+## 5. 神经辐射场（Neural Radiance Fields）
+首先贴上原文：[Representing Scenes as Neural Radiance Fields for View Synthesis](https://arxiv.org/abs/2003.08934)。
+
+不同于传统的三维重建方式，需要把场景通过点云、网格、体素等方式来进行表征，NeRF直接将场景建模成一个可微的5D辐射场隐式存储于神经网络中，只需要输入极少（稀疏，甚至有时只需要两张）不同角度带pose的图像就能训练得到一个NeRF模型，可以通过这个模型渲染出任意角度下清晰的图像。
+> NeRF通过极少量图片可重构3D场景并渲染出任一角度的图像。
+
+---
+
+NeRF的结构可用下图做一个直观的理解：
+![ddpm](/Generative%20Content/Struct_NeRF.png)
+<center>
+图(a)通过相机光线采样得到5D坐标（位置+视角方向）；
+图(b)把位置输入MLP来生成颜色和体积密度；
+图(c)使用立体渲染技术，
+
+利用这些值渲染新的图像；
+图(d)利用该渲染函数的可导性来最小化合成图像与`ground truth`的损失函数来进行场景优化。
+
+图片来源: [Mildenhall et al.](https://arxiv.org/abs/2003.08934)
+</center>
+
+输入已知的场景中点的位置 $(x,y,z)$ 和观察方向 $(\theta, \phi)$ ，MLP神经网络 $F_\Theta$ 会输出数据组
+$(\mathbf{c},\sigma(\mathbf{x}))$ 来表示该方向的自发光颜色 $\mathbf{c}$ 和该点体素密度 $\sigma(\mathbf{x})$。 然后使用 `classical volume rendering` 渲染方程即可得到光线 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 根据近点 $t_n$ 和远点 $t_f$ 所产生的颜色值 $C(\mathbf{r})$ :
+$$
+C(\mathbf{r})=\int^{t_f}_{t_n}T(t)\sigma(\mathbf{r}(t)\mathbf{c}(\mathbf{r}(t)),\mathbf{d})dt
+$$
+其中 $T(t)=exp\big(-\int^t_{t_n}\sigma(\mathbf{r}(s))ds\big)$ 代表了从近点 $t_n$ 到 点 $t$ 的累积透射比，$\mathbf{d}$ 是三维的观察方向矢量。
+
+
