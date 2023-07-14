@@ -244,7 +244,7 @@ $$
 ## 5. 神经辐射场（Neural Radiance Fields）
 首先贴上原文：[Representing Scenes as Neural Radiance Fields for View Synthesis](https://arxiv.org/abs/2003.08934)。
 
-不同于传统的三维重建方式，需要把场景通过点云、网格、体素等方式来进行表征，NeRF直接将场景建模成一个可微的5D辐射场隐式存储于神经网络中，只需要输入极少（稀疏，甚至有时只需要两张）不同角度带pose的图像就能训练得到一个NeRF模型，可以通过这个模型渲染出任意角度下清晰的图像。
+不同于传统的三维重建方式，需要把场景通过点云、网格、体素等方式来进行显式表征，NeRF直接将场景建模成一个可微的5D辐射场隐式存储于神经网络中，只需要输入极少（稀疏，甚至有时只需要两张）不同角度带pose的图像就能训练得到一个NeRF模型，可以通过这个模型渲染出任意角度下清晰的图像。
 > NeRF通过极少量图片可重构3D场景并渲染出任一角度的图像。
 
 ---
@@ -262,11 +262,45 @@ NeRF的结构可用下图做一个直观的理解：
 图片来源: [Mildenhall et al.](https://arxiv.org/abs/2003.08934)
 </center>
 
-输入已知的场景中点的位置 $(x,y,z)$ 和观察方向 $(\theta, \phi)$ ，MLP神经网络 $F_\Theta$ 会输出数据组
-$(\mathbf{c},\sigma(\mathbf{x}))$ 来表示该方向的自发光颜色 $\mathbf{c}$ 和该点体素密度 $\sigma(\mathbf{x})$。 然后使用 `classical volume rendering` 渲染方程即可得到光线 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 根据近点 $t_n$ 和远点 $t_f$ 所产生的颜色值 $C(\mathbf{r})$ :
+---
+
+### NeRF的表征形式
+输入已知的场景中点的位置 $\mathbf{x}=(x,y,z)$ 和二维观察方向 $(\theta, \phi)$ ，MLP神经网络 $F_\Theta$ 会输出数据组 $(\mathbf{c},\sigma(\mathbf{x}))$ 来表示该方向的自发光颜色 $\mathbf{c}=(r,g,b)$ 和该点体素密度 $\sigma(\mathbf{x})$。 然后使用 `classical volume rendering` 渲染方程即可得到光线 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 根据近点 $t_n$ 和远点 $t_f$ 所产生的颜色值 $C(\mathbf{r})$ :
 $$
 C(\mathbf{r})=\int^{t_f}_{t_n}T(t)\sigma(\mathbf{r}(t)\mathbf{c}(\mathbf{r}(t)),\mathbf{d})dt
 $$
 其中 $T(t)=exp\big(-\int^t_{t_n}\sigma(\mathbf{r}(s))ds\big)$ 代表了从近点 $t_n$ 到 点 $t$ 的累积透射比，$\mathbf{d}$ 是三维的观察方向矢量。
 
+### 通过辐射场渲染体素
+上述体素渲染方程式是可导的连续形式，但在实际网络训练过程中只能用离散形式进行近似计算。使用求积法则可以得到 $C(\mathbf{r})$ 的近似估计值 $\hat C(\mathbf{r})$:
+$$
+\hat C(\mathbf{r})=\sum^N_{i=1}T_i(1-exp(-\sigma_i\delta_i)) \mathbf{c}(i)
+$$
+其中 $T_i=exp\big(-\sum^{i-1}_{j=1}\sigma_j\delta_j\big)$ ， $\sigma_i=t_{i+1}-t_i$ 表示相邻样本之间的距离，通过将视线路径均分成N段，再对每一段均匀随机采样体素用于渲染计算使得 $t_i \sim \mathcal{U}[t_n+\frac{i-1}{N}(t_f-t_n),\;t_n+\frac{i}{N}(t_f-t_n)]$ 。
 
+### NeRF的优化方式
+#### 位置编码（positional coding）
+因为直接通过 `隐式表征+体素渲染` 的方式 会导致高频信息丢失，从而致使图像模糊。为了让神经网络模型更好的拟合高频信息，需要将位置向量 $\mathbf{x}$ 和 方向向量 $\mathbf{d}$ 应用从 $\mathbb{R}$ 到 $\mathbb{R^{2L}}$ 的增维映射 $\gamma$ :
+$$
+\gamma(p)=(sin(2^0\pi p),cos(2^0\pi p),...,sin(2^{L-1}\pi p),cos(2^{L-1}\pi p))
+$$
+
+#### 分级体素抽样 (hierarchical volume sampling)
+因为**自由空间**（**free space**）和**遮挡区域**（**occluded region**）这样对于计算颜色值毫无贡献但仍被重复采样的区域存在，拖慢了NeRF的训练效率，NeRF采用了分级表征的方式同时优化两个网络：**粗糙**（**coarse**）和**精细**（**fine**）网络。
+
+先通过分级采样得到 $N_c$ 个点，通过粗糙网络的渲染方程计算得到：
+$$
+\hat C_c(\mathbf{r})=\sum^N_{i=1}w_ic_i   \qquad w_i=T_i(1-exp(\sigma_i\delta_i))
+$$
+然后对 $w_i$ 进行归一化：
+$$
+\hat w_i=\frac{w_i}{\sum^{N_c}_{j=1}w_j}
+$$
+来产生分段常数概率密度函数，然后通过逆变换采样获得 $N_f$ 个点，并添加至 $N_c$ 个点中用于精细网络的渲染。通过二次采样的方式，可以使采样点更多采用对于计算颜色有贡献的体素进行计算。
+
+最后通过同时优化两个网络的最小残差即可得到损失方程：
+$$
+L=\sum_{r\in \mathbb{R}}\big[||\hat{C}_c(\mathbf{r})-C(\mathbf{r})||^2_2+||\hat{C}_f(\mathbf{r})-C(\mathbf{r})||^2_2 \big]
+$$
+
+最小化该损失方程即可使NeRF达到优化条件。
