@@ -7,10 +7,18 @@ Use of Drones in the Ukraine War
 
 无人机在战争中的应用包括：
 
-- 精确有效载荷投放(如投放炸药或神风无人机攻击)
+- 精确有效载荷投放(如投放炸药或神风无人机攻击)。无人机可通过投弹、发射导弹甚至撞击目标的方式来造成伤害。
 - 监视(侦察敌人阵地以发射迫击炮或以其他方式协调攻击)
 - 骚扰/盘旋
 - 网络/黑客攻击(利用无人机接近敌人网络从而侵入并削弱/渗透网络)
+
+[这里](https://www.remoteflyer.com/how-drone-strike-works/#:~:text=Drone%20strikes%20work%20by%20firing,target%20or%20exploding%20above%20it.)有更详细的关于无人机优缺点的介绍，优点主要包括：
+- 斩首，即高效消灭高价值目标。
+- 打击恐怖组织。斩首造成恐慌，甚至因其反抗从而更容易找到恐怖组织目标。
+- 降低地面部队伤亡。
+- 未来商用化的实验。军用技术都会为将来的民用做前沿探索。
+- 高精度。精准打击，减少平民伤亡。
+
 
 无人机已经成为了不对称战争的象征，一架价值3000美元的无人机可以由不在前线的控制员向一辆价值500万美元的坦克投放炸弹，摧毁坦克及其驾驶员。
 
@@ -58,7 +66,7 @@ Use of Drones in the Ukraine War
 英国外交大臣Ian Langford指出，俄罗斯方面极力避免联合战争，而希望通过单一领域赢得一场快速战争。俄罗斯的这一战术主张使得乌克兰无人机通过向俄罗斯装甲车投掷炸弹兵侦查敌方阵地，而造成超过预期的伤害。他重点指出虽然无人机已经是未来战争的一部分，但单独使用无人机并不能成为致胜武器。通过其与步兵、炮兵、重装、空军、海军甚至太空和网络部队的协同作战才能使其发挥全部效力。
 
 ## 反无人机（CUAS）系统
-俄罗斯有启用[车载反无人机系统](https://www.linkedin.com/posts/tim-de-zitter_russia-is-attacking-satellites-in-the-earth-activity-6930624135312138240-ugRZ?)，但其造价过于昂贵且非常容易成为打击目标，此外他的干扰效果对于无人机来说有些过剩。而手持或编写反无人机单位多为"自制"的，缺乏对操作员安全性的保证，且因为专利问题，其干扰效果往往一言难尽。
+俄罗斯常用电磁枪/电磁脉冲设备来防御无人机，有启用[车载反无人机系统](https://www.linkedin.com/posts/tim-de-zitter_russia-is-attacking-satellites-in-the-earth-activity-6930624135312138240-ugRZ?)，但其造价过于昂贵且非常容易成为打击目标，此外他的干扰效果对于无人机来说有些过剩。而手持或编写反无人机单位多为"自制"的，缺乏对操作员安全性的保证，且因为专利问题，其干扰效果往往一言难尽。
 
 俄罗斯军工业因多年的腐败和经营不善等问题，无人机和坦克产线都严重受阻，生产过程中大量使用中国或欧美提供的零件。所以西方国家的反无人机系统在侦测和打击方面表现得很高效。
 
@@ -78,11 +86,11 @@ Use of Drones in the Ukraine War
 ### [反无人机在装甲战车上的部署](https://www.defensenews.com/land/2021/10/25/general-dynamics-epirus-team-up-to-integrate-counter-drone-swarm-system-on-combat-vehicles/)
 美国Epirus公司通过将反无人机系统部署到重甲单位上来提供短程防空的能力。其通过高功率微波能力来摧毁无人机群，甚至能摧毁车辆和船只。该组合重甲单位具有外型小，耐高温低温等特性，已经成为对抗无人机群和远距离精准打击的重要武器。
 
-### [ISIS利用无人机袭击法国军队](https://www.washingtonpost.com/news/checkpoint/wp/2016/10/11/isis-used-an-armed-drone-to-kill-two-kurdish-fighters-and-wound-french-troops-report-says/)
+### [无人机被恐怖组织应用](https://www.washingtonpost.com/news/checkpoint/wp/2016/10/11/isis-used-an-armed-drone-to-kill-two-kurdish-fighters-and-wound-french-troops-report-says/)
 2016年10月，ISIS组织曾使用商用无人机携带炸药袭击希拉克北部的法国阵地，造成2名库尔德士兵死亡，2名法国士兵受伤。
 
-### [美军通过无人机击毙基地组织领导人](https://www.reuters.com/world/cia-carried-out-drone-strike-afghanistan-us-officials-say-2022-08-01/)
+### [斩首行动](https://www.reuters.com/world/cia-carried-out-drone-strike-afghanistan-us-officials-say-2022-08-01/)
 
-基地组织领导人于家中被游荡载弹无人机发射“地狱火”导弹击中身亡。
+基地组织领导人于家中被美军游荡载弹无人机发射“地狱火”导弹击中身亡。
 
 ### [美军无人机袭击疑似ISIS车辆致10名儿童身亡](https://www.nytimes.com/2021/09/10/world/asia/us-air-strike-drone-kabul-afghanistan-isis.html)
