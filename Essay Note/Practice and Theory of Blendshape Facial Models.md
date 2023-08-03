@@ -9,7 +9,7 @@ Facial Blendshape Weight
 一个blendshape模型生成一个由不同面部表情线性组合而成的**面部姿态**(**facial pose**)，即blendshape的“目标”。通过改变线性组合的权重值，可以以很少的计算量得到一系列的面部表情。角色的表情范围可以通过拓展形状集而改善。
 
 ## blendshapes的定义和代数计算
-blendshapes是一组线性面部模型，其中**单个基向量**（**individual basis vectors**）不是正交的而是代表了**单个面部表情**（**individual facial expressions**）。独立及向量被称为*blendshape target* 和 *morph target*，甚至直接被称为*shapes* 或 *blendshapes*。而相关的权重值由于其在用户界面往往以滑块的形式出现，经常被称为 *sliders*。
+blendshapes是一组线性面部模型，其中**单个基向量**（**individual basis vectors**）不是正交的而是代表了**单个面部表情**（**individual facial expressions**）。单个基向量被称为*blendshape target* 和 *morph target*，甚至直接被称为*shapes* 或 *blendshapes*。而相关的权重值由于其在用户界面往往以滑块的形式出现，经常被称为 *sliders*。
 
 ### delta blendshape 
 我们可以向**中性脸**（**neutral face**）添加blendshape值来得到新的表情（resulting face） $\mathrm{\mathbf{f}}$ ，其可以被表示为
