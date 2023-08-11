@@ -54,27 +54,27 @@ $$
 ### 几何制约采样（Geometry-Guided sampling）
 为了提高 PoseDiffusion 在回归精度，文中引入了**双视角几何约束** (**two-view geometry constraints**)。
 
-令 $P^{i,j}={(\mathbf{p}^i_k,\mathbf{p}^j_k)}^{N_{P^{i,j}}}_{k=1}$ 代表一对场景图片 $(I^i,I^j)$ 同一个像素点 $p_k\in \mathbb{R}^2$ 的二维对应关系；$(x^i,x^j)$ 代表对应的相机姿态。那么可以得到相机及其二维对应关系的极差 $e^{i,j}\in \mathbb{R}$ ：
+令 $P^{i,j}={(\mathbf{p}^i_k,\mathbf{p}^j_k)}^{N_{P^{i,j}}}_{k=1}$ 代表一对场景图片 $(I^i,I^j)$ 同一个像素点 $\mathbf{p}_k\in \mathbb{R}^2$ 的二维对应关系；$(x^i,x^j)$ 代表对应的相机姿态。那么可以得到相机及其二维对应关系的极线差 $e^{i,j}\in \mathbb{R}$ ：
 $$
 e^{i,j}(x^i,x^j,P^{i,j})=\sum_{k=1}^{|P^{i,j}|}\left[ \frac{\tilde {\mathbf{p}}_k^{j\mathrm{T}}F^{i,j}\tilde{\mathbf{p}}^i_k}{(F^{i,j}\bar{\mathbf{p}}^i_k)^2_1+(F^{i,j}\bar{\mathbf{p}}^i_k)^2_2+(F^{i,j\mathrm{T}}\bar{\mathbf{p}}^i_k)^2_1+(F^{i,j\mathrm{T}}\bar{\mathbf{p}}^i_k)^2_2} \right]_\epsilon
 $$
 
 其中 $\bar{\mathbf{p}}=[\mathbf{p};1]$ 表示 $\mathbf{p}$ 的齐次坐标，$[z]_\epsilon=min(z,\epsilon)$ 是鲁棒限制方程，$F^{i,j}\in \mathbb{R}^{3\times 3}$ 是图片 $I^i$ 和 $I^j$ 之间从点 $\mathbf{p}^i_k$ 到行的映射关系。
 
-此外，为了使采样结果满足图片之间的极坐标限制，分类器会加入一个由 $x_t$ 限制的分布 $p(\mathrm{I}|x_t)$ 的梯度来扰动预测平均值 $\mu_{t-1}=\mathcal{D}_\theta(x_t,t,\mathrm{I})$:
+此外，为了使采样结果满足图片之间的极线限制，分类器会加入一个由 $x_t$ 限制的分布 $p(\mathrm{I}|x_t)$ 的梯度来扰动预测平均值 $\mu_{t-1}=\mathcal{D}_\theta(x_t,t,\mathrm{I})$:
 $$
 \hat{\mathcal{D}}_\theta(x_t,t,\mathrm{I})=\mathcal{D}_\theta(x_t,t,\mathrm{I})+s\nabla_{x_t}\mathrm{log}p(\mathrm{I}|x_t)
 $$
 
 其中，$s\in\mathbb{R}$ 控制了扰动强度。
 
-通过把 $p(\mathrm{I}|x_t)$ 建模成独立指数分布，与成对Sampson误差 $e^{i,j}$ 的乘积，可以求得相机 $x$ 的均匀先验分布：
+通过把 $p(\mathrm{I}|x_t)$ 建模成独立指数分布，与成对Sampson误差 $e^{i,j}$ 的乘积，可以近似求得相机 $x$ 的均匀先验分布：
 $$
 p(\mathrm{I}|x_t)=\prod_{i,j}p(I^i,I^j|x^i_t,x^j_t)\propto\prod_{i,j}\mathrm{exp}(-e^{i,j})
 $$
 
 ### 内外参数表征
-外参 $g^i$ 被表示为一个二元组 $(\mathbf{q}^i,\mathbf{t}^i)$，其组成为一个由 旋转矩阵 $R^i\in\mathbb{SO}(3)$ 和相机位移向量 $\mathbf{t}^i\in\mathbb{R}^3$ 组成的四元组  $\mathbf{q}^i\in \mathbb{H}$ 。其代表了世界-相机的线性变换 $\mathbf{p}_c=g^i(\mathbf{p}_w)=R^i\mathbf{p}_w+t^i$。
+外参 $g^i$ 被表示为一个二元组 $(\mathbf{q}^i,\mathbf{t}^i)$，其组成为一个由 旋转矩阵 $R^i\in\mathbb{SO}(3)$ 和相机位移向量 $\mathbf{t}^i\in\mathbb{R}^3$ 组成的四元组  $\mathbf{q}^i\in \mathbb{H}$ 。其代表了世界-相机的线性变换 $\mathbf{p}_c=g^i(\mathbf{p}_w)=R^i\mathbf{p}_w+\mathbf{t}^i$。
 
 内参 $K^i$ 则被表示为一个相机标定矩阵 $[f^i,0,p_x;0,f^i,p_y;0,0,1]\in\mathbb{R}^{3\times 3}$。其中 $f^i\in \mathbb{R}^+$ 表示焦距，为了保证焦距为正，$f^i=\mathrm{exp}(\hat{f}^i)$，$\hat{f}^i\in\mathbb{R}$ 由降噪器 $\mathcal{D}_\theta$ 预测。
 
