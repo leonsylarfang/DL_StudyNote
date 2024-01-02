@@ -28,7 +28,7 @@ NeRF的训练过程可按下图分为三个步骤：
 (2) 对每个采样点，通过送入视角与采样位置到NeRF MLP来计算出局部颜色和密度。
 (3) 根据计算出的颜色和密度，由[体渲染](https://www.cv-foundation.org/openaccess/content_cvpr_2016/html/Schonberger_Structure-From-Motion_Revisited_CVPR_2016_paper.html)的方法生成图像，然后与GT计算loss。
 
-体渲染计算图片像素颜色的方法为：给定体密度方程 $\sigma$ ，点颜色方程 $\mathbf{c}$，相机位置 $\mathbf{o}$，视角 $\mathbf{d}$，那么在近点 $t_n$ 到远点 $t_f$ 区间，由任意相机光线 $\mathbf{r}$ 上所有的点 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 的渲染出的像素颜色 $C(\mathbf{r})$ 可以这样得到：
+**体渲染**计算图片像素颜色的方法为：给定体密度方程 $\sigma$ ，点颜色方程 $\mathbf{c}$，相机位置 $\mathbf{o}$，视角 $\mathbf{d}$，那么在近点 $t_n$ 到远点 $t_f$ 区间，由任意相机光线 $\mathbf{r}$ 上所有的点 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 的渲染出的像素颜色 $C(\mathbf{r})$ 可以这样得到：
 $$
 C(\mathbf{r})=\int_{t_n}^{t_f}T(t)\cdot\sigma(\mathbf{r}(t))\cdot\mathbf{c}(\mathbf{r}(t),\mathbf{d})\cdot dt
 $$
