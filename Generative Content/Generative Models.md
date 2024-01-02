@@ -265,7 +265,7 @@ NeRF的结构可用下图做一个直观的理解：
 ---
 
 ### NeRF的表征形式
-输入已知的场景中点的位置 $\mathbf{x}=(x,y,z)$ 和二维观察方向 $(\theta, \phi)$ ，MLP神经网络 $F_\Theta$ 会输出数据组 $(\mathbf{c},\sigma(\mathbf{x}))$ 来表示该方向的自发光颜色 $\mathbf{c}=(r,g,b)$ 和该点体素密度 $\sigma(\mathbf{x})$。 然后使用 `classical volume rendering` 渲染方程即可得到光线 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ 根据近点 $t_n$ 和远点 $t_f$ 所产生的颜色值 $C(\mathbf{r})$ :
+输入已知的场景中点的位置 $\mathbf{x}=(x,y,z)$ 和二维观察方向 $(\theta, \phi)$ ，MLP神经网络 $F_\Theta$ 会输出数据组 $(\mathbf{c},\sigma(\mathbf{x}))$ 来表示该方向的自发光颜色 $\mathbf{c}=(r,g,b)$ 和该点体素密度 $\sigma(\mathbf{x})$。 然后使用 `classical volume rendering` 渲染方程即可得到光线 $\mathbf{r}(t)=\mathbf{o}+t\mathbf{d}$ ($\mathbf{o}$ 代表光线的起始位置，$t$表示光线经过的距离) 根据近点 $t_n$ 和远点 $t_f$ 所产生的颜色值 $C(\mathbf{r})$ :
 $$
 C(\mathbf{r})=\int^{t_f}_{t_n}T(t)\sigma(\mathbf{r}(t)\mathbf{c}(\mathbf{r}(t)),\mathbf{d})dt
 $$
@@ -296,11 +296,11 @@ $$
 $$
 \hat w_i=\frac{w_i}{\sum^{N_c}_{j=1}w_j}
 $$
-来产生分段常数概率密度函数，然后通过逆变换采样获得 $N_f$ 个点，并添加至 $N_c$ 个点中用于精细网络的渲染。通过二次采样的方式，可以使采样点更多采用对于计算颜色有贡献的体素进行计算。
+来产生分段常数概率密度函数，然后通过逆变换采样获得 $N_f$ 个点，并添加至 $N_c$ 个点中用于精细网络的渲染(共计 $N_f+N_c$个点)。通过二次采样的方式，可以使采样点更多采用对于计算颜色有贡献的体素进行计算。
 
 最后通过同时优化两个网络的最小残差即可得到损失方程：
 $$
-L=\sum_{r\in \mathbb{R}}\big[||\hat{C}_c(\mathbf{r})-C(\mathbf{r})||^2_2+||\hat{C}_f(\mathbf{r})-C(\mathbf{r})||^2_2 \big]
+L=\sum_{r\in R}\big[||\hat{C}_c(\mathbf{r})-C(\mathbf{r})||^2_2+||\hat{C}_f(\mathbf{r})-C(\mathbf{r})||^2_2 \big]
 $$
 
 最小化该损失方程即可使NeRF达到优化条件。
