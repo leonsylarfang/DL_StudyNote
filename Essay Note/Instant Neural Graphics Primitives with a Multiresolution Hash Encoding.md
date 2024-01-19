@@ -25,8 +25,8 @@ Instant Neural Graphics Primitives with a Multiresolution Hash Encoding
 
 ![](/Essay%20Note/images/instantNGP_2.png)
 
-(1) 对于给定的输入坐标 $\mathbf{x}$，找到其周围 $L$ 个分辨率级别下的体素，然后通过散列其整数坐标来将索引分配给它们的四角。
-(2) 在哈希编码表 $\theta_l$ 中 找到四角的索引对应的 $F$ 维特征向量。
+(1) 对于给定的输入坐标 $\mathbf{x}$，找到其周围 $L$ 个分辨率级别下的体素，然后通过散列其整数坐标来将索引分配给体素的8个顶点。
+(2) 在哈希编码表 $\theta_l$ 中 找到8个顶点的索引对应的 $F$ 维特征向量。
 (3) 根据 $\mathbf{x}$ 在相应的第 $l$ 个体素内的相对位置来进行线性插值。
 (4) 将每个分辨率下的结果，以及辅助输入 $\xi \in \mathbb{R}^E$ 拼接作为编码输入 $y\in \mathbb{R}^{LF+E}$。 
 (5) 将编码输入 $y$ 送入 MLP 中训练。
