@@ -90,7 +90,11 @@ $$
 
 由此，给定当前姿态每个三角面片的形变梯度预测 $D$，即可通过反向替换获得顶点位置。
 ### 2.2 Near-Rigid/SSD 顶点约束
+* 由于骨架平动分量的缺失，Poisson 优化不能检测或补偿全局的平动问题，这导致低频误差的累积，角色的末端可能与节点配置（joint configuration）不符。而通过识别出一组 near-rigid 点，并将其修正到 SSD 预测值，就可以解决这一问题，因为 SSD 模型中每个顶点都依赖于骨骼的平移分量，其中包含了每段骨骼的全局位置信息。
+<div align=center>  <img src="/Essay%20Note/images/RTERR_4.jpg" width=80%><br>(a)通过预测边来用 Poisson 公式重构顶点位置；(b)累积的低频误差导致 mesh 末端和 joint configuration 不匹配；(c)通过将 near-rigid 点修正到 SSD预测位置（红点）来解决问题。
+</div>
 
+* 通过
 
 
 
