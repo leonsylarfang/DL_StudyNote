@@ -70,7 +70,7 @@ SSD (skeletal subspace deformation) 的基本思想是 mesh 上顶点的变换�
     \tilde{\theta}_{b_1,b_2}(\mathbf{q})=[\tilde{\theta}_{b_1}(\mathbf{q})^T \tilde{\theta}_{b_2}(\mathbf{q})^T 1]^T\in\mathbb{R}^{7\times 1}
     $$
 
-给定缩放/剪切序列 $S^i$ 和骨骼旋转序列 $\mathbf{q}^i$，我们通过最小二乘法来优化下列预测器，从而得到参数 $H\in\mathbb{R}^{9\times7}$：
+给定缩放/剪切序列 $S^i$ 和骨骼旋转序列 $\mathbf{q}^i$，我们通过最小二乘法来优化下列预测器，从而得到参数 $H\in\mathbb{R}^{9\times 7}$：
     $$
     \underset{H}{\argmin}\sum_{i\in{1,...,N}}||H\tilde{\theta}_{b_1,b_2}(\mathbf{q}^i)-\mathbf{vec}(S^i)||^2
     $$
@@ -94,7 +94,131 @@ $$
 <div align=center>  <img src="/Essay%20Note/images/RTERR_4.jpg" width=80%><br>(a)通过预测边来用 Poisson 公式重构顶点位置；(b)累积的低频误差导致 mesh 末端和 joint configuration 不匹配；(c)通过将 near-rigid 点修正到 SSD预测位置（红点）来解决问题。
 </div>
 
-* 通过
+* 通过每个顶点在训练集和阈值上的误差，选择出 SSD 预测的最佳点集 $F$，将 $F$ 内的顶点固定为目标函数中的 SSD 对应预测值。
+    
+    * 定义线性映射 $\Psi_a$ 使得 $\Psi_a\mathbf{q}$ 等价于 SSD 对顶点 $a$ 在 pose $\mathbf{q}$ 时的预测 $\sum_b^Jw_{a,b}T_b(\mathbf{q})\hat{\mathbf{y}}_a$
+    * 在通过非负最小二乘法得到 SSD 权重 $w_{a,b}$ 后，将 $F$ 中所有点 $\mathbf{y}_a=\Psi_a\mathbf{q}$ 代入 Eq.1 可以得到：
+    $$
+    \underset{\mathbf{y}}{\argmin}\sum_{k\in1,...,T}\sum_{j=2,3}||D_k(\mathbf{q})\hat{\mathbf{v}}_{k,j}-\mathbf{v}_{k,j}||^2
+    $$
+    其中，
+    $$
+    \mathbf{v}_{k,j}= \left\{\begin{array}{ll}
+    {\mathbf{y}_{k,j}-\mathbf{y}_{k,1}}& {\text{if} \; \mathbf{y}_{k,j} \notin F \;\mathrm{and}\; \mathbf{y}_{k,1} \notin F}\\
+    {\mathbf{y}_{k,j}-\Psi_{k,1}\mathbf{q}}& {\mathrm{if\; only} \; \mathbf{y}_{k,1} \in F } \\
+    {\Psi_{k,j}\mathbf{q}-\mathbf{y}_{k,1}}&{ \mathrm{if\; only} \; \mathbf{y}_{k,j} \in F }\\
+    \end{array}\right. \tag{2}
+    $$
+    如果一条边的两个顶点都是固定的，那么可以把该边的误差项从目标函数中去除。
+    * 通过对对应线性系统中的左侧进行预因式分解，再反向替换来预测新的姿态，从而与 Eq.1 类似的方法来求解 Eq.2。
+### 2.3 简化 Mesh 重建
+如下图，从一组 skeleton-mesh 配对数据中提取出三角面片形变序列 $D_k^i$。经过预测器简化环节后可以得到一组关键形变梯度序列 $D^i_l$ 来训练关键形变梯度预测器。文中模型则由这些预测器跟 mesh 重建矩阵 $C_1$ 和 $C_2$ 组成。
+<div align=center>  <img src="/Essay%20Note/images/RTERR_5.jpg" width=100%><br></div>
+
+* 将每个三角面片的形变梯度预测器表示为 $P$ 个关键形变梯度预测器的线性组合：
+    $$
+    D_k(\mathbf{q})=\sum_{l\in 1,...,P}\beta_{k,l}D_l(\mathbf{q}) \tag{3}
+    $$
+
+    每个从一组 proxy-bones 获得的顶点可以表达为类 SSD 形式：
+    $$
+    \mathbf{y}_a(\mathbf{t})=\sum_{l\in 1,...,P}\alpha_{a,b}T_b(\mathbf{t})\hat{\mathbf{y}}_a=\Phi_\alpha \mathbf{t} \tag{4}
+    $$
+    
+    其中，$\Phi_\alpha$ 被定义成类似于映射 $\Psi$, $\mathbf{t}$ 则以类似 $\mathbf{q}$ 的形式包含了 proxy-bone 的变换。
+* 将 Eq.3 和 Eq.4 代入 Eq.2 可以得到 proxy-bone 变换 $\mathbf{t}$：
+    $$
+    \mathbf{t(q)}=\underset{\mathbf{t}}{\argmin}\sum_{k\in1,...,T}\sum_{j=2,3}||\sum_{l\in1,...,P}\beta_{k,l}D_l(\mathbf{q})\hat{\mathbf{v}}_{k,j}-\mathbf{v}_{k,j}||^2
+    $$
+
+    其中，
+    $$
+    \mathbf{v}_{k,j}= \left\{\begin{array}{ll}
+    {\mathbf{\Phi}_{k,j}\mathbf{t}-\mathbf{\Phi}_{k,j}\mathbf{t}}& {\text{if} \; \mathbf{y}_{k,j} \notin F \;\mathrm{and}\; \mathbf{y}_{k,1} \notin F}\\
+    {\mathbf{\Phi}_{k,j}\mathbf{t}-\mathbf{\Psi}_{k,1}\mathbf{q}}& {\mathrm{if\; only} \; \mathbf{y}_{k,1} \in F } \\
+    {\mathbf{\Psi}_{k,j}\mathbf{q}}-\mathbf{\Phi}_{k,1}\mathbf{t}&{ \mathrm{if\; only} \; \mathbf{y}_{k,j} \in F }\\
+    \end{array}\right. \tag{5}
+    $$
+* 因为预测器和顶点重构都是遵循线性模型，所以 $\mathbf{t(q)}$ 与 形变梯度预测器 $D_l(\mathbf{q})$ 跟 骨旋转 $\mathbf{q}$ 也都是线性关系，所以可用以下式子来表达：
+    $$
+    \mathbf{t(q)}=C_1\mathbf{d(q)} + C_2\mathbf{q} \tag{6}
+    $$
+
+    其中，$\mathbf{d(q)}=[\mathbf{vec}(D_1(\mathbf{q}))^T\dots\mathbf{vec}(D_P(\mathbf{q}))^T]^T$。
+    求解常数项 $C_1,C_2$ 需要先设定：
+    $$
+    \;(k,j)\in\left\{\begin{array}{ll}
+    {F_0}& {\text{where both} \; \mathbf{y}_{k,j} \;\text{and}\;\mathbf{y}_{k,1} \text{are not fixed}}\\
+    {F_1}& {\text{where only} \;\mathbf{y}_{k,1} \text{is fixed}}\\
+    {F_2}& {\text{where only} \;\mathbf{y}_{k,j} \text{is fixed}}\\
+    \end{array}\right. 
+    $$
+
+    那么可以得到：
+    $$
+    \begin{aligned}
+    A\in\mathbb{R}^{12P\times 12P}&=\sum_{(k,j)\in F_0}(\Phi_{k,j}-\Phi_{k,1})^T(\Phi_{k,j}-\Phi_{k,1})\\ &+\sum_{(k,j)\in F_1}\Phi_{k,j}^T\Phi_{k,j}+\sum_{(k,j)\in F_2}\Phi_{k,1}^T\Phi_{k,1}
+    \end{aligned}
+    $$
+
+    $$
+    \begin{aligned}
+    B\in\mathbb{R}^{12P\times 9}&=\sum_{(k,j)\in F_0}(\Phi_{k,j}-\Phi_{k,1})^T\beta_{kl}(\hat{\mathbf{v}}_{k,j}^T\otimes I_{3\times 3})\\ &+\sum_{(k,j)\in F_1}\Phi_{k,j}^T\beta_{kl}(\hat{\mathbf{v}}_{k,j}^T\otimes I_{3\times 3})\\&+\sum_{(k,j)\in F_2}(-\Phi_{k,1})^T\beta_{kl}(\hat{\mathbf{v}}_{k,j}^T\otimes I_{3\times 3})
+    \end{aligned}
+    $$
+
+    其中 $\otimes$ 代表克罗内克积（Kronecker product）。
+    从而可以得到：
+    $$
+    \begin{aligned}
+    &B_1\in\mathbb{R}^{12P\times 9P}=[B_{11}\dots B_{1P}] \\
+    &B_2\in\mathbb{R}^{12P\times 12J}=\sum_{(k,j)\in F_1}\Phi_{k,j}^T\Psi_{k,1}+\sum_{(k,j)\in F_2}\Phi_{k,1}^T\Psi_{k,j} \\
+    \Rightarrow\; &C_1\in \mathbb{R}^{12P\times 9P}=A^{-1}B_1\\
+    &C_2\in\mathbb{R}^{12P\times 12J}=A^{-1}B_2
+    \end{aligned}
+    $$
+
+    这样一来，整个 Poisson mesh 重建步骤被简化成 matrix-vector 乘法（Eq.6）和 matrix-palette skinning （Eq.4）两步可以在GPU上执行的操作。
+
+## 3. 降维（Dimensionality Reduction）
+用聚类（clustering）的方法来求简化参数：
+1. 用于顶点简化的 SSD 权重 $\alpha$
+2. 用于简化预测器的混合权重 $\beta$
+3. 关键形变梯度预测器 $D_l(\mathbf{q})$
+
+### 3.1 顶点简化
+通过在一组训练 mesh $\mathbf{y}^i$ 上，基于 SSD 的 proxy-bone 预测和 GT 顶点位置之间的 $L^2$ 差值来测量顶点简化的误差 $E(T^i_b,\alpha_{a,b})=\sum_i^N\sum_a^V||\mathbf{y}_a^i-\sum_b^P\alpha_{a,b}T_b^i\hat{\mathbf{y}}_a||^2$。为了找到给定最大误差阈值 $\epsilon$ 时， proxy-bone 数量 $P$ 的最小值，即
+$$
+\underset{T_b^i,\alpha_{a,b}}{\min}P \qquad \text{subject to}\; E(T_b^i,\alpha_{a,b})<\epsilon
+$$
+
+$\alpha_{a,b}$ 可以通过非负最小二乘法由 $P$ 和 $T_b^i$ 求得，而 $T_b^i$ 也同样可以通过非负最小二乘由 $P$ 和 $\alpha_{a,b}$ 解得。为了同时解得两者最小值，采用以下方法：
+* 定义连接 proxy-bone $A$ 到 proxy-bone $B$ 的误差 $E_{A\to B}=\sum_i^N\sum_{\alpha\in G_A}||\mathbf{y}_a^i-T_b^i\hat{\mathbf{y}}_a||^2$。该误差即连接 $G_A$ 组顶点到 $G_B$ 组顶点真实近似误差的上限。 
+* 如下图，将相邻组之间所有的可能连接添加到一个优先级队列中，迭代执行最低误差的连接直到误差达到阈值：
+1. 先把每个三角面片 $k$ 初始化到变换矩阵 $T_k^i$，该矩阵映射了从静置姿态到每个姿态 $i$ 的所有顶点。初始化对应组 $G_k$ 以包含三角面片 $k$ 的所有顶点。
+2. 选择具有最小误差 $E_{A\to B}$ 的连接 $A\to B$，把 $A$ 组的点都加入到 $B$组。
+3. 由当前变化矩阵 $T_b^i$ 解得权重 $\alpha_{a,b}$ 。
+4. 由当前权重 $\alpha_{a,b}$ 解得变换矩阵 $T_b^i$。
+5. 如果 $E(T^i_b,\alpha_{a,b})<\epsilon$ 则重回步骤 2 。
+<div align=center>  <img src="/Essay%20Note/images/RTERR_6.jpg" width=80%><br>连续的迭代将协调的顶点合并到越来越少的 proxy-bones 里。
+</div>
+
+### 3.2 预测器简化
+要获得关键形变梯度预测器 $D_l(\mathbf{q})$，需要先从三角面片的形变梯度序列 $D_k^i$ 中 找到关键形变梯度序列 $D_l^i$。然后根据这些序列训练预测器。接着用 Eq.2 中目标函数做如下替换来找到最佳关键序列作为误差度量：
+$$
+D_k^i=\sum_{l\in 1\dots P}\beta_{k,l}D_l^i
+$$
+
+其中，$\beta_{k,l}$ 是混合权重：
+$$
+\underset{\beta_{k,l},D_l^i}{\argmin}\sum_{i\in 1\dots N}\sum_{k\in 1\dots T}\sum_{j=2,3}||\sum_{l\in 1\dots P}\beta_{k,l}D_l^i\hat{\mathbf{v}}_{k,j}-\mathbf{v}_{k,j}^i||^2
+$$
+
+用坐标下降法求解上述优化问题，交替求解 $\beta_{k,l}$ 和 $D_l^i$。这里可以把 $D_l^i$ 初始化为顶点聚类中 $T_b^i$ 左上角的 $3\times 3$ 矩阵
+
+## GPU应用
+
+
 
 
 
