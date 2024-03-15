@@ -19,7 +19,7 @@ Real-Time Enveloping with Rotational Regression
     ![](/Essay%20Note/images/RTERR_1.jpg)
     如上图所示，通过极坐标分解，形变梯度 $D$ 可以被分解为旋转分量 $R$ 和 缩放/剪切分量 $S$。在用两个不同的回归模型预测出两个分量 $R(\mathbf{q})$ 和 $S(\mathbf{q})$ 来组合出 $D(\mathbf{q})$。其中 $W,u$ 是旋转回归模型中的参数，$H$ 是缩放/剪切模型的参数。
 
-* 从 skeletal poses 样本中提取出谷歌旋转序列 $\mathbf{q}^i$，再从其对应的 mesh 中提取出形变梯度 $D^i$ 来完成上述回归模型。
+* 从 skeletal poses 样本中提取出骨骼旋转序列 $\mathbf{q}^i$，再从其对应的 mesh 中提取出形变梯度 $D^i$ 来完成上述回归模型。
 
 ### 1.1 符号注释
 * 每一个 skeletal pose $\mathbf{q}$ 都记做由 $J$ 个 bone transformations（**bone tranformations 是跟静止姿态的变化而非上一帧姿态**） 组成的 vector $[\mathbf{vec}(Q_1)^T,d_1^T,...,\mathbf{vec}(Q_J)^T,d_J^T]\in \mathbb{R}^{12J\times 1}$。
