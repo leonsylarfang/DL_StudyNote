@@ -30,7 +30,7 @@ Real-Time Enveloping with Rotational Regression
 SSD (skeletal subspace deformation) 的基本思想是 mesh 上顶点的变换受对应骨骼的控制。
 
 但如下图，当肌肉凸起时，mesh 的某些部分沿着与关节旋转相反或沿着不同旋转轴旋转。为此，文中提出了一个新的泛用回归模型来关联关节旋转跟 mesh 的旋转。
-<div align=center>  <img src="/Essay%20Note/images/RTERR_2.jpg" width=30%>
+<div align=center>  <img src="/Essay Note/images/RTERR_2.jpg" width=30%>
 </div>
 
 * 训练模型    
