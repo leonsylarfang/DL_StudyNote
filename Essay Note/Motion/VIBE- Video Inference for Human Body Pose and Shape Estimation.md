@@ -44,12 +44,12 @@ $$
 
 如上图，将生成器的输出 $\hat \Theta$ 输入到多层 GRU 模型 $f_M$ 中，来预测 $i$ 时刻的隐式代码 $h_i=f_m(\hat \Theta_i)$ 。然后用一个自注意力机制（self attention）来将其聚合成 $[h_1,h_2,\dots,h_T]$。最后用一个线性全连接层 来预测 $[0,1]$ 的一个值，代表属于可信的人类运动流形的置信度。反传到生成器 $\mathcal{G}$ 的对抗 loss 为：
 $$
-L_{adv}=\mathbb{E}_{\Theta\sim p_G}\left[ (\mathcal{D}_M(\hat\Theta)-1)^2 \right]
+L_{adv}=\mathbb{E}_{\hat\Theta\sim p_G}\left[ (\mathcal{D}_M(\hat\Theta)-1)^2 \right]
 $$
 
 判别器 loss 为：
 $$
-L_{\mathcal{D}_M}=\mathbb{E}_{\Theta\sim p_R}\left[ (\mathcal{D}_M(\Theta)-1)^2 \right]+\mathbb{E}_{\Theta\sim p_G}\left[ (\mathcal{D}_M(\hat\Theta))^2 \right]
+L_{\mathcal{D}_M}=\mathbb{E}_{\Theta\sim p_R}\left[ (\mathcal{D}_M(\Theta)-1)^2 \right]+\mathbb{E}_{\hat\Theta\sim p_G}\left[ (\mathcal{D}_M(\hat\Theta))^2 \right]
 $$
 
 其中 $p_G$ 是生成的动作序列，$p_R$ 是从 AMASS 中得到的真实动作序列。由于 $\mathcal{D}_M$ 是在真实姿势上训练的，它也学习了可信的身体姿势配置，因此减轻了对单独的单帧判别器的需求。
