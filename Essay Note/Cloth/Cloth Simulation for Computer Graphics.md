@@ -241,9 +241,157 @@ $$
 <br> 图4.1：一个简单的质量-弹簧系统
 </div> 
 
+### 4.2.1 能量最小化
+物理系统总是试图达到最小的能量状态，所以我们可以通过定义能量并将其最小化来建模物理系统。当所有的力达到平衡且使系统处于能量较低的状态，这就是热力学第二定律。
+
+为了达到低能量状态，那*保守力*应该为能量方程 $E(\mathbf{x})\in\mathbb{R}$的负梯度：
+$$
+\mathbf{f(x)}=-\frac{\partial E(\mathbf{x})}{\partial\mathbf{x}}
+\tag{4.2}
+$$
+
+类似碰撞和摩擦力等力，其做工并不仅由粒子的初位置和终位置决定，而保守力的做工与路径无关，可以由势能来定义。以最简单的保守力———重力来举例，重力只沿 $\mathit{z}$ 轴作用，质点 $i$ 在重力作用下的势能为 $E_g(\mathbf{x}_i)=m_igx_{iz}$，$x_{iz}$ 代表粒子沿 $z$ 轴的位置分量。那么根据公式 4.2，其合力为：
+
+$$
+\begin{aligned}
+    \mathbf{f}_i(\mathbf{x})&=-\frac{\partial E_g(\mathbf{x})}{\partial\mathbf{x}_i}\\
+    &=-\left[\frac{\partial E_g}{\partial x_{ix}},\frac{\partial E_g}{\partial x_{iy}},\frac{\partial E_g}{\partial x_{iz}}\right] \\
+    &=-\begin{bmatrix}
+    0 \\
+    0 \\
+    m_ig \\
+    \end{bmatrix} 
+\end{aligned}
+\tag{4.3}
+$$
+
+### 4.2.2 弹簧势能和力
+由胡克定律可以得到，连接着粒子 $i$ 和 $j$ 的，静置长度为 $L$，弹簧刚度系数为 $k$ 的弹簧，其势能为：
+$$
+E_{i,j}(\mathbf{x})=\frac{1}{2}k(||\mathbf{x}_i-\mathbf{x}_j||-L)^2
+\tag{4.4}
+$$
+
+其中，$||\cdot||$ 代表欧氏距离。从而我们可以得到弹簧施加在两个粒子上的力：
+$$
+\begin{aligned}
+\mathbf{f}_i(\mathbf{x})&=-\frac{\partial E_{i,j}(\mathbf{x})}{\partial\mathbf{x}_i}\\
+&=-k(||\mathbf{x}_i-\mathbf{x}_j||-L)\frac{\mathbf{x}_i-\mathbf{x}_j}{||\mathbf{x}_i-\mathbf{x}_j||}\\
+\end{aligned}
+\tag{4.5}
+$$
+
+$$
+\begin{aligned}
+\mathbf{f}_j(\mathbf{x})&=-\frac{\partial E_{i,j}(\mathbf{x})}{\partial\mathbf{x}_j}\\
+&=k(||\mathbf{x}_i-\mathbf{x}_j||-L)\frac{\mathbf{x}_i-\mathbf{x}_j}{||\mathbf{x}_i-\mathbf{x}_j||}\\
+\end{aligned}
+\tag{4.6}
+$$
+
+如图4.2，我们可以很直观地理解 $\mathbf{f}_i=-\mathbf{f}_j$，即连接两个粒子的弹簧将沿着相同的轴以同样大小的力在相反的方向上拉动或推动粒子。这个力同样为保守力，其与重力一样做功无关于路径，只关乎粒子的始末位置。所产生力与拉伸或压缩量呈线性比例的弹簧被称为线性弹簧或胡克弹簧。
+<div align="center">
+<img src="/Essay%20Note/images/CSCG_spring_force.png" width=520 height=100
+ />
+<br> 图4.2：连接两个粒子的弹簧所施加的力
+</div> 
+
+### 4.2.3 弹簧阻力
+如 [3.2.2](#离散化导致的问题) 中提到的，保持模拟系统的稳定需要添加阻力。而添加这个阻力最简单的方式就是加一个与运动方向相反的力，对于与粒子 $j$ 相连接的粒子 $i$，其阻力为：
+$$
+\begin{aligned}
+\mathbf{d}_i(\mathbf{x})&=-k_d(\mathbf{v}_i-\mathbf{v}_j)\\
+&=-\mathbf{d}_j(\mathbf{x})
+\end{aligned}
+\tag{4.7}
+$$
+
+其中，$k_d$ 代表阻尼系数。这样就简单地模拟了现实世界的能量耗散表现。
+
+## 4.3 整合
+根据公式 3.5 离散牛顿定律，我们可以得到如下系统：
+$$
+\begin{aligned}
+\Delta\mathbf{x}&=h\mathbf{v}_n\\
+\Delta\mathbf{v}&=h\left(\mathbf{M}^{-1}\mathbf{f}(\mathbf{x}_n,\mathbf{v}_n)\right)
+\end{aligned}
+\tag{4.8}
+$$
+
+其中，$\Delta\mathbf{x}=\mathbf{x}_{n+1}-\mathbf{x}_n$ 和 $\Delta\mathbf{v}=\mathbf{v}_{n+1}-\mathbf{v}_n$ 分别代表了 $n+1$ 和 $n$ 时刻位置差和速度差。
+
+对于系统中的每一个粒子，内力通过计算负的能量方程梯度得到，再把外力加到内力上，这样就可以获得速度更新 $\Delta\mathbf{v}$，所以 $n+1$ 时刻的状态为：
+$$
+\begin{aligned}
+\mathbf{x}_{n+1}&=\mathbf{x}_n+\Delta\mathbf{x}\\
+\mathbf{v}_{n+1}&=\mathbf{v}_n+\Delta\mathbf{v}
+\end{aligned}
+\tag{4.9}
+$$
+
+## 4.4 可撕布料
+通常情况下，布料会在没有太多抵抗下进行小幅度拉伸。但当拉伸超过一定量时，会导致极大的力来抵抗这种形变。本节讨论的就是拉建模这种情形。
+
+针对这种布料表现，一种处理方法是将其建模成可撕布料，即当质点间弹簧被拉伸超过静置长度的一定比例时，布料会断裂和撕裂。要实现撕裂效果只要把弹簧从质量-弹簧网络中去除即可，而 [Metaaphanon et al.(2009)](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1467-8659.2009.01561.x) 提出了一种更为先进的办法。
+
+
+# 5. 隐式积分
+虽然在图形学中，只需要视觉可信的结果，但过大的时间步长还是会过度降低模拟结果的准确度，甚至导致结果完全无法使用。为了获得更稳定的模拟结果，[Baraff and Witkin(1998)](https://dl.acm.org/doi/abs/10.1145/3596711.3596792) 将隐式积分方案应用于布料模拟。虽然隐式积分单步计算相较于显示欧拉方法更为复杂，但其能使得在大时间步长时仍然获得稳定的结果，故我们可以采取更大的步长来加快模拟，而不用担心稳定性问题。
+
+[这篇笔记](https://liaohuming.com/2017/10/19/20171019-%E6%98%BE%E5%BC%8F%E6%97%B6%E9%97%B4%E7%A7%AF%E5%88%86%E4%B8%8E%E9%9A%90%E5%BC%8F%E6%97%B6%E9%97%B4%E7%A7%AF%E5%88%86/)很好地介绍了显示时间积分和隐式时间积分的区别。隐式方法只在步长结束时计算力，即用当前时刻的结果和下一时刻预测结果来进行反复迭代得到下一时刻的结果。必须通过迭代得到，无条件收敛，是能量平衡的结果，通常用于静力分析。其最大的优点在于无条件稳定性，即时间步长任意大。
+
+而显式方法是用上一时刻结果和当前时刻的结果来计算下一时刻的结果，有条件收敛，且要求步长较小，通常用于动力分析。其最大的优点在于不需要迭代，计算简单。
+
+## 5.1 后向欧拉
+从时刻 $t_n$ 开始，每一步位置更新 $\Delta\mathbf{x}=\mathbf{x}_{n+1}-\mathbf{x}_{n}$ 和速度更新 $\Delta\mathbf{v}=\mathbf{v}_{n+1}-\mathbf{v}_{n}$ 可按如下隐式积分（又称后向欧拉）计算：
+$$
+\begin{aligned}
+    \Delta\mathbf{x}&=h(\mathbf{v}_n+\Delta\mathbf{v})\\
+    \Delta\mathbf{v}&=h\left(\mathbf{M^{-1}f(x}_n+\Delta\mathbf{x,v}_n+\Delta\mathbf{v})\right)
+\end{aligned}
+\tag{5.1}
+$$
+
+将公式 5.1 改写得到：
+$$
+\begin{aligned}
+    \mathbf{x}_{n+1}&=\mathbf{x}_n+h\mathbf{v}_{n+1}\\
+    \mathbf{v}_{n+1}&=\mathbf{v}+h\mathbf{M}^{-1}\mathbf{f}_{n+1}
+\end{aligned}
+\tag{5.2}
+$$
+
+其中，$\mathbf{f}_{n+1}=\mathbf{f(x}_{n+1},\mathbf{v}_{n+1})=\mathbf{f(x}_n+\Delta\mathbf{x,v}_n+\Delta\mathbf{v})$
+
+### 5.1.1 线性化
+公式 5.2 是非线性的，可以采用 Newton-Raphson 方法精确地求解。然而在计算机图形学中，我们会采用更快但精确度较低的线性系统来近似非线性系统，来得到后向欧拉公式的近似解。
+
+这个线性化是通过一阶泰勒近似替代非线性力项来实现的：
+$$
+\mathbf{f(x}_n+\Delta\mathbf{x,v}_n+\Delta\mathbf{v})\approx\mathbf{f}_n+\frac{\partial\mathbf{f}}{\partial\mathbf{x}}\Delta\mathbf{x}+\frac{\partial\mathbf{f}}{\partial\mathbf{v}}\Delta\mathbf{v}
+\tag{5.3}
+$$
+
+其中，$\mathbf{f}_n=\mathbf{f(x}_n,\mathbf{v}_n)$，$\mathbf{f,x}\in\mathbb{R}^{3N}$，所以 $\frac{\partial\mathbf{f}}{\partial\mathbf{x}},\frac{\partial\mathbf{f}}{\partial\mathbf{v}}\in\mathbb{R}^{3N\times 3N}$。将方程 5.3 代入非线性方程 5.1 即可得到近似的线性系统，再将公式 5.1 合并消除 $\Delta\mathbf{x}$ 可以得到速度的更新：
+$$
+\Delta\mathbf{v}=h\mathbf{M}^{-1}\left(\mathbf{f}_n+\frac{\partial\mathbf{f}}{\partial\mathbf{x}}h(\mathbf{v}_n+\Delta\mathbf{v})+\frac{\partial\mathbf{f}}{\partial\mathbf{v}}\Delta\mathbf{v}\right)
+\tag{5.4}
+$$
+
+这种方法被称为隐式方法，可以看到未知的速度更新 $\Delta\mathbf{v}$ 同时出现在等式的两边，我们不能通过简单的移项来解，而是需要一个线性系统。将方程 5.4 重新排序可得：
+$$
+\left(\mathbf{I}-h\mathbf{M}^{-1}\frac{\partial\mathbf{f}}{\partial\mathbf{v}}-h^2\mathbf{M}^{-1}\frac{\partial\mathbf{f}}{\partial\mathbf{x}}\Delta\mathbf{v}\right)=h\mathbf{M}^{-1}\left(\mathbf{f}_n+h\frac{\partial\mathbf{f}}{\partial\mathbf{x}}\mathbf{v}_n\right)
+\tag{5.5}
+$$
+
+其中，$\mathbf{I}\in\mathbb{R}^{3N\times 3N}$ 是一个单位矩阵，方程 5.5 是一个形式为 $\mathbf{A}\Delta\mathbf{v=b}$ 的线性方程组。在构造这些矩阵时，我们会计算内力的 $\frac{\partial\mathbf{f}}{\partial\mathbf{x}}$ 和 $\frac{\partial\mathbf{f}}{\partial\mathbf{v}}$，但所有的外力都会被组合到 $\mathbf{f}_n$ 中，且除非知道如何计算，不需要考虑对系统的导数。
 
 
 
+
+
+
+ 
 
 
 
