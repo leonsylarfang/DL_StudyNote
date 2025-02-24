@@ -384,8 +384,38 @@ $$
 \tag{5.5}
 $$
 
-其中，$\mathbf{I}\in\mathbb{R}^{3N\times 3N}$ 是一个单位矩阵，方程 5.5 是一个形式为 $\mathbf{A}\Delta\mathbf{v=b}$ 的线性方程组。在构造这些矩阵时，我们会计算内力的 $\frac{\partial\mathbf{f}}{\partial\mathbf{x}}$ 和 $\frac{\partial\mathbf{f}}{\partial\mathbf{v}}$，但所有的外力都会被组合到 $\mathbf{f}_n$ 中，且除非知道如何计算，不需要考虑对系统的导数。
+其中，$\mathbf{I}\in\mathbb{R}^{3N\times 3N}$ 是一个单位矩阵，方程 5.5 是一个形式为 $\mathbf{A}\Delta\mathbf{v=b}$ 的线性方程组,其中 $\mathbf{A}$ 是一个[稀疏矩阵](https://zhuanlan.zhihu.com/p/620446480)，具有特定的块结构。。在构造这些矩阵时，我们会计算内力的 $\frac{\partial\mathbf{f}}{\partial\mathbf{x}}$ 和 $\frac{\partial\mathbf{f}}{\partial\mathbf{v}}$，但所有的外力都会被组合到 $\mathbf{f}_n$ 中，且除非知道如何计算，不需要考虑对系统的导数。
 
+
+## 5.2 稳定性分析
+类似 [3.2](#32-稳定性分析)，将连续时间方程离散化，但采用后向隐式欧拉的方法，可以得到离散化后的测试方程：
+$$
+\begin{aligned}
+y_{k+1}&=y_k+hf(t_{k+1},y_{k+1})\\
+&=y_k+h\lambda y_{k+1}
+\end{aligned}
+\tag{5.6}
+$$
+
+合并同类项后，我们可以得到下一时刻的值 $y_{k+1}$：
+$$
+y_{k+1}=\frac{1}{1-h\lambda}y_k
+\tag{5.7}
+$$
+
+从而可以逐步推导得到：
+$$
+y_k=(\frac{1}{1-h\lambda})^ky_0
+\tag{5.8}
+$$
+
+若假设，当时间 $t$ 趋于无穷大时，方程的精确解是有界的，边界条件为 $\mathrm{Re}(h\lambda)$ 非正。因为时间步长 $h$ 为正，这个边界条件就变成了 $\mathrm{Re}(\lambda)$ 非正。从而我们可以得到离散解的边界条件为：
+$$
+\left |\frac{1}{1-h\lambda}\right |<1,\; \mathrm{Re}(\lambda)<0
+\tag{5.9}
+$$
+
+对于任意的时间步长 $h$ 和实数 $\lambda$ 
 
 
 
@@ -395,3 +425,4 @@ $$
 
 
 
+ewr
