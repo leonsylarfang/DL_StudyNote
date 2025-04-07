@@ -85,7 +85,7 @@ $$
 其中，$\mathcal{A}$ 是通过求解一个系数矩阵为$\frac{\partial G}{\partial x^n}$的线性系统得到的，这个系数矩阵是系统能量 $E$ 的Hessian矩阵。项 $\mathcal{A}[\frac{\partial G}{\partial x^n},\frac{\partial G}{\partial v^n},\frac{\partial G}{\partial \varsigma^n}]$ 通过 $G$ 将 $\mathcal{A}$ 的微分分别反向传播到 $x^n,v^n$ 和 $\varsigma^n$。这个过程可以通过将 $G$ 视为一个支持自动微分的可微分层来实现。使用AutoDiff，我们消除了手动推导 $\frac{\partial G}{\partial v^n}$ 和 $\frac{\partial G}{\partial \varsigma^n}$ 的解析表达的需求。
 
 ## 2.算法总览
-如图1，首先从单视角图片来预测初始的服装样板（sewing pattern），然后生成连续的多视角RGB图片，再据此预测的人体姿态。3D服装初始化的方式是将2D样板拼接和悬垂到预测的人体模型上。使用一个可微分CIPC模拟器来模拟衣服与人体的互动，这样我们就可以去由之前生成的多视角RGB图片、法线图和分割信息来优化物理参数和服装样板的形状。优化后的状态可以产生一个模拟就绪的场景，包含一个穿着与输入对齐的3D服装的人类模型，其服装材质使用视觉-语言模型和图片扩散模型来自动生成。最后，通过应用CIPC模拟器，可以模拟出预测人体模型穿着优化服装同时执行复杂动作序列的动态场景。
+如图1，首先从单视角图片来预测初始的服装样板（sewing pattern），然后用多视角扩散模型来生成环绕人体的多视角RGB图片作为人体姿态和服装形状的 GT。再据预测的人体姿态，用可微分CIPC模拟器将2D样板拼接和悬垂到预测的人体模型上，完成3D服装初始化，并由之前生成的多视角RGB图片、法线图和分割信息来优化物理参数和服装样板的形状。优化后的状态可以产生一个模拟就绪的场景，包含一个穿着与输入对齐的3D服装的人类模型，其服装材质使用视觉-语言模型和图片扩散模型来自动生成。最后，通过应用CIPC模拟器，可以模拟出预测人体模型穿着优化服装同时执行复杂动作序列的动态场景。
 <div align="center">
 <img src="/Essay%20Note/images/dress1-2-3_method_overview.png" width=1000 height=350 />
 <br> 图1：文章框架
@@ -98,7 +98,13 @@ $$
 然后使用弧长参数化来实现沿着版片边缘的均匀采样。对每条拼接版片边，保证采样点数量相同，这使得服装模拟中可以应用顶点到顶点的拼接约束，从而简化缝纫过程。接着对每个板块的内部独立执行[狄洛尼三角剖分](https://www.cs.cmu.edu/~quake/triangle.html)。
 
 ### 3.1.1 版片参数化
+SewFormer生成服装样板经常显示出特定的对成型。它根据版片名预定义的顺序来生成固定数量的版片，忽略其中不激活的版片。包括自对称性和互对称性，对称信息都被潜入在版片名中。对称的边对可以通过与其镜像对称的的版片重叠，或在自对称的情况下与其自身的镜像重叠来自动识别。
 
+给定一组对称边对 $\mathcal{E}_S=\{(i,j)\sim(k,l)\}$，我通过解决下述二次优化问题，来定义三角剖分前版片的**验证**曲线顶点$\{\hat{\mathbf{\mathit{P}}}_i\}$：
+$$
+\min_{\{\hat{\mathbf{\mathit{P}}}_i\}}\sum_{(i,j)\sim(k,l)}\left\|(\hat{\mathbf{\mathit{P}}}_i-\hat{\mathbf{\mathit{P}}}_j)+\mathbf{\mathit{R}}_S(\hat{\mathbf{\mathit{P}}}_k-\hat{\mathbf{\mathit{P}}}_l) \right\|^2_2+\epsilon\sum_l\left\|\hat{\mathbf{\mathit{P}}}_i-\mathbf{\mathit{P}}_i \right\|^2_2
+\tag{12}
+$$
 
 
 
